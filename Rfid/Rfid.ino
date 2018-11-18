@@ -35,10 +35,14 @@
 #define RXD_PIN         2
 #define TXD_PIN         4
 
-#define LED_BLEU        3           // Led de fin de setup
-#define LED_ROUGE       6           // Led ecriture
-#define LED_VERTE       7           // Led lecture
-#define BOUTON          5
+/* ATTENTION !!!
+ *  Les LED sont alimenté par le +5V et s'allume a l'état LOW
+ */
+
+#define STATUS_LED       3           // Led de détection de tag
+#define WRITER_LED       6           // Led ecriture
+#define READER_LED       7           // Led lecture
+#define BOUTON           5
 
 #define ANTI_REBOND     250
 
@@ -57,15 +61,15 @@ void setup() {
   SPI.begin();                                                  // Init SPI bus
   mfrc522.PCD_Init();                                              // Init MFRC522 card
   Serial.println(F("Read personal data on a MIFARE PICC:"));    //shows in serial that it is ready to read
-  
-  pinMode(LED_BLEU, OUTPUT);
-  pinMode(LED_ROUGE, OUTPUT);
-  pinMode(LED_VERTE, OUTPUT);
+
+  pinMode(STATUS_LED, OUTPUT);
+  pinMode(WRITER_LED, OUTPUT);
+  pinMode(READER_LED, OUTPUT);
   pinMode(BOUTON, INPUT_PULLUP);
 
-  digitalWrite(LED_BLEU, LOW);
-  digitalWrite(LED_VERTE, LOW);
-  digitalWrite(LED_ROUGE, HIGH);
+  digitalWrite(STATUS_LED, HIGH);
+  digitalWrite(READER_LED, LOW);
+  digitalWrite(WRITER_LED, HIGH);
 }
 
 //*****************************************************************************************//
@@ -85,8 +89,8 @@ void loop() {
 
   if (etat == 0)
   {
-    digitalWrite(LED_VERTE, LOW);
-    digitalWrite(LED_ROUGE, HIGH);
+    digitalWrite(READER_LED, LOW);
+    digitalWrite(WRITER_LED, HIGH);
 
 
     // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
@@ -184,8 +188,8 @@ void loop() {
 
   else
   {
-    digitalWrite(LED_VERTE, HIGH);
-    digitalWrite(LED_ROUGE, LOW);
+    digitalWrite(READER_LED, HIGH);
+    digitalWrite(WRITER_LED, LOW);
 
     //Serial.println("Mode écriture");
 
@@ -197,6 +201,8 @@ void loop() {
     if ( ! mfrc522.PICC_IsNewCardPresent()) {
       return;
     }
+    else
+      digitalWrite(STATUS_LED, LOW);
 
     // Select one of the cards
     if ( ! mfrc522.PICC_ReadCardSerial()) {
@@ -246,7 +252,11 @@ void loop() {
       Serial.println(mfrc522.GetStatusCodeName(status));
       return;
     }
-    else Serial.println(F("{success:true}"));
+    else
+    {
+      Serial.println(F("{success:true}"));
+      digitalWrite(STATUS_LED, HIGH);
+    }
 
     Serial.println(" ");
     mfrc522.PICC_HaltA(); // Halt PICC
